@@ -28,6 +28,6 @@
   },
   "devDependencies": {
     "nodemon": "^1.9.2",
-    "now": "^0.25.0"
+    "now": "^0.25.1"
   }
 }

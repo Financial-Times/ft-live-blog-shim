@@ -53,10 +53,12 @@ const blogForm = (
 </form>`;
 
 const blogFormMeta = (blog, body) => {
-	blog.catchup.push({
-		event: 'postSaved',
-		data: body
-	});
+	if(!blog.meta || (body.title !== blog.meta.title || body.excerpt !== blog.meta.excerpt)) {
+		blog.catchup.push({
+			event: 'postSaved',
+			data: body
+		});
+	}
 
 	merge(blog, {
 		config: {
@@ -77,14 +79,16 @@ ${event === 'msg' || event === 'editmsg' ? `
 	<time datetime="${new Date(data.emb * 1000).toISOString()}">${new Date(data.emb * 1000).toLocaleString()}</time>
 	${event === 'editmsg' ? `<i>edited message <a href="#msg-${data.mid}">${data.mid}</a></i>` : ''}
 	<p>
-		${event === 'msg' ? `<form action="/blog/${id}/post/${data.mid}?action=edit" method="POST">
-			<input value="${data.textrendered}" name="msg">
-			<button name="action" value="edit" type="submit">✎</button>
-			<button name="action" value="delete" type="submit">🚫</button>
-		</form>` : data.textrendered}
+		${data.textrendered}
 	</p>
+
+	${event === 'msg' ? `<form action="/blog/${id}/post/${data.mid}?action=edit" method="POST">
+		<input value="${data.textrendered}" name="msg">
+		<button name="action" value="edit" type="submit">✎</button>
+		<button name="action" value="delete" type="submit">🚫</button>
+	</form>` : ''}
 ` : event === 'delete' ? `<i>deleted message <a href="#msg-${data.messageid}">${data.messageid}</a></i>`
-: event === 'postSaved' ? `<i>updated title to "${data.title}" and excerpt to "${data.excerpt}"`
+: event === 'postSaved' ? `<i>updated title to "${data.title}" and excerpt to "${data.excerpt}"</i>`
 : `what's a "${event}"`}</li>`;
 
 export default route({
@@ -92,14 +96,19 @@ export default route({
 		const {authorName = ''} = cookies(req);
 
 		return html(res, `
+		<h1>Live blogs testing tool</h1>
+
+		${Object.keys(blogs).length ? '<h2>Blogs</h2>' : ''}
+		<ul>
+			${Object.keys(blogs).map(key => `<li><a href="/blog/${key}">${blogs[key].meta.title}</a></li>`).join('\n')}
+		</ul>
+		<h2>Create blog</h2>
+		${blogForm()}
+		<h2>Author name</h2>
 		<form action="/author" method="GET">
 			<input name="name" placeholder="Author name" value="${authorName}">
 			<input type="submit" value="Change author name">
-		</form>
-		<ul>
-			${Object.keys(blogs).map(key => `<li><a href="/blog/${key}">${blogs[key].meta.title}</a></li>`).join('\n')}
-			<li>Create blog: ${blogForm()}</li>
-		</ul>`);
+		</form>`);
 	},
 
 	'/author' (req, res) {
@@ -155,21 +164,28 @@ export default route({
 
 					default: {
 						return html(res, `
-							<a href="/">↩</a>
+							<h1><a href="/">↩</a> Live blogs testing tool</h1>
+
 							<article>
+							<h2>${blog.meta.title}</h2>
+							<h3>${blog.meta.excerpt}</h3>
+
+							<hr>
+							<h4>Edit blog</h4>
 							${blogForm(params.id, blog.config, blog.meta)}
 
 							<hr>
+							<h4>Write message</h4>
+							<form action="/blog/${params.id}/post" method="POST">
+								<input name="msg" placeholder="Message"><input type="submit" value="+">
+							</form>
+
+							${blog.catchup.length ? '<hr><h4>Messages &amp; events</h4>' : ''}
 							<ul>
-							${blog.catchup.map(renderMessage(params.id)).join('\n')}
-							<li>
-								<form action="/blog/${params.id}/post" method="POST">
-									<input name="msg" placeholder="Message"><input type="submit" value="+">
-								</form>
-							</li>
+								${blog.catchup.map(renderMessage(params.id)).join('\n')}
 							</ul>
 						</article>
-						<style> :target { background: #fed; }</style>`);
+						<style> :target { background: #fed; } li { margin: 1em 0; } </style>`);
 					}
 				}
 			}
