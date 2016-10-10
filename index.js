@@ -139,7 +139,7 @@ export default route({
 						emb: Math.floor(Date.now() / 1000),
 						datemodified: Math.floor(Date.now() / 1000),
 						authordisplayname: authorName,
-						author: authorName[0],
+						author: authorName.split(' ').map(p => p[0].toUpperCase()).join(''),
 						authornamestyle: 'full',
 					},
 				});
