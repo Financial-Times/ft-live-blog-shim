@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "start": "nodemon -x micro index.js",
-    "now-start": "micro index.js"
+    "now-start": "micro index.js",
+    "deploy": "now"
   },
   "repository": {
     "type": "git",
@@ -26,6 +27,7 @@
     "raw-body": "^2.1.7"
   },
   "devDependencies": {
-    "nodemon": "^1.9.2"
+    "nodemon": "^1.9.2",
+    "now": "^0.25.0"
   }
 }
