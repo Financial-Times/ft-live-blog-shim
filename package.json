@@ -21,6 +21,7 @@
   "dependencies": {
     "boulevard": "^2.3.5",
     "cookie": "^0.3.1",
+    "lodash.merge": "^4.6.0",
     "micro": "^4.1.1",
     "raw-body": "^2.1.7"
   },
