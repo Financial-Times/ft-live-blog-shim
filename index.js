@@ -3,6 +3,7 @@ import url from 'url';
 import rawBody from 'raw-body';
 import qs from 'qs';
 import {send} from 'micro';
+import cookie from 'cookie';
 
 const formBody = req => rawBody(req, {encoding: 'utf8'}).then(qs.parse);
 const redirect = (res, location, status = 302) => {
@@ -17,6 +18,11 @@ const html = (res, t, status = 200) => {
 	send(res, status, t);
 };
 
+const cookies = req => cookie.parse(req.headers.cookie || '');
+const setCookies = (res, cookies) => Object.keys(cookies).forEach(
+	key => res.setHeader('set-cookie', cookie.serialize(key, cookies[key]))
+);
+
 const blogForm = (id = '', {title = '', excerpt = ''} = {}) => `<form action="/blog/${id}" method="POST">
 	<input value="${title}" name="title" placeholder="Title">
 	<input value="${excerpt}" name="excerpt" placeholder="Excerpt">
@@ -25,10 +31,27 @@ const blogForm = (id = '', {title = '', excerpt = ''} = {}) => `<form action="/b
 
 export default route({
 	'/' (req, res) {
-		return html(res, `<ul>
+		const {authorName = ''} = cookies(req);
+
+		return html(res, `
+		<form action="/author" method="GET">
+			<input name="name" placeholder="Author name" value="${authorName}">
+			<input type="submit" value="Change author name">
+		</form>
+		<ul>
 			${Object.keys(blogs).map(key => `<li><a href="/blog/${key}">${blogs[key].meta.title}</a></li>`).join('\n')}
 			<li>Create blog: ${blogForm()}</li>
 		</ul>`);
+	},
+
+	'/author' (req, res) {
+		const {query = {}} = url.parse(req.url, true);
+
+		setCookies(res, {
+			authorName: query.name
+		});
+
+		return redirect(res, '/');
 	},
 
 	async '/blog' (req, res) {
@@ -85,7 +108,7 @@ export default route({
 							<hr>
 							<ul>
 							${blog.catchup.map(event => {
-								if(event.event === 'msg') return `<li>${event.data.textrendered}</li>`;
+								if(event.event === 'msg') return `<li><b>${event.data.authordisplayname}</b> ${event.data.textrendered}</li>`;
 							}).join('\n')}
 							<li>
 								<form action="/blog/${params.id}/post" method="POST">
@@ -106,6 +129,7 @@ export default route({
 
 		switch(req.method) {
 			case 'POST': {
+				const {authorName = 'Unknown'} = cookies(req);
 				const body = await formBody(req);
 				blog.catchup.push({
 					event: 'msg',
@@ -114,6 +138,9 @@ export default route({
 						textrendered: body.msg,
 						emb: Math.floor(Date.now() / 1000),
 						datemodified: Math.floor(Date.now() / 1000),
+						authordisplayname: authorName,
+						author: authorName[0],
+						authornamestyle: 'full',
 					},
 				});
 
