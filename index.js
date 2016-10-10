@@ -64,11 +64,19 @@ const blogFormMeta = (blog, body) => merge(blog, {
 	}
 });
 
-const renderMessage = data => `<li>
+const renderMessage = id => ({event, data}) => `<li id="${event}-${typeof data.mid === 'undefined' ? data.messageid : data.mid}">
+${event === 'msg' || event === 'editmsg' ? `
 	<b>${data.authornamestyle === 'full' ? data.authordisplayname : data.author}</b>
 	<time datetime="${new Date(data.emb * 1000).toISOString()}">${new Date(data.emb * 1000).toLocaleString()}</time>
-	${data.textrendered}
-</li>`;
+	${event === 'editmsg' ? `<i>edited message <a href="#msg-${data.mid}">${data.mid}</a></i>` : ''}
+	<p>
+		${event === 'msg' ? `<form action="/blog/${id}/post/${data.mid}?action=edit" method="POST">
+			<input value="${data.textrendered}" name="msg">
+			<button name="action" value="edit" type="submit">✎</button>
+			<button name="action" value="delete" type="submit">🚫</button>
+		</form>` : data.textrendered}
+	</p>
+` : event === 'delete' ? `deleted message <a href="#msg-${data.messageid}">${data.messageid}</a>` : `what's a "${event}"`}</li>`;
 
 export default route({
 	'/' (req, res) {
@@ -144,18 +152,15 @@ export default route({
 
 							<hr>
 							<ul>
-							${blog.catchup.map(event => {
-								switch(event.event) {
-									case 'msg': return renderMessage(event.data);
-								}
-							}).join('\n')}
+							${blog.catchup.map(renderMessage(params.id)).join('\n')}
 							<li>
 								<form action="/blog/${params.id}/post" method="POST">
 									<input name="msg" placeholder="Message"><input type="submit" value="+">
 								</form>
 							</li>
 							</ul>
-						</article>`);
+						</article>
+						<style> :target { background: #fed; }</style>`);
 					}
 				}
 			}
@@ -166,21 +171,50 @@ export default route({
 		const blog = blogs[params.id];
 		if(!blog) return html(res, `<a href="/">↩</a> blog ${params.id} not found`, 404);
 
-		switch(req.method) {
-			case 'POST': {
-				const {authorName = 'Unknown'} = cookies(req);
-				const body = await formBody(req);
+		const {authorName = 'Unknown'} = cookies(req);
+		const body = await formBody(req);
+		blog.catchup.push({
+			event: 'msg',
+			data: {
+				mid: blog.catchup.length,
+				textrendered: body.msg,
+				emb: Math.floor(Date.now() / 1000),
+				datemodified: Math.floor(Date.now() / 1000),
+				authordisplayname: authorName,
+				author: authorName.split(' ').map(p => p[0].toUpperCase()).join(''),
+				authornamestyle: blog.config.authornamestyle,
+			},
+		});
+
+		return redirect(res, `/blog/${params.id}`);
+	},
+
+	async '/blog/:id/post/:mid' (req, res, params) {
+		const blog = blogs[params.id];
+		if(!blog) return html(res, `<a href="/">↩</a> blog ${params.id} not found`, 404);
+
+		const body = await formBody(req);
+		switch(body.action) {
+			case 'edit': {
+				const msg = blog.catchup[parseInt(params.mid, 10)];
+
 				blog.catchup.push({
-					event: 'msg',
-					data: {
-						mid: blog.catchup.length,
+					event: 'editmsg',
+					data: Object.assign({}, msg.data, {
 						textrendered: body.msg,
-						emb: Math.floor(Date.now() / 1000),
 						datemodified: Math.floor(Date.now() / 1000),
-						authordisplayname: authorName,
-						author: authorName.split(' ').map(p => p[0].toUpperCase()).join(''),
-						authornamestyle: blog.config.authornamestyle,
-					},
+					}),
+				});
+
+				return redirect(res, `/blog/${params.id}`);
+			}
+
+			case 'delete': {
+				blog.catchup.push({
+					event: 'delete',
+					data: {
+						messageid: params.mid
+					}
 				});
 
 				return redirect(res, `/blog/${params.id}`);
