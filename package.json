@@ -1,0 +1,29 @@
+{
+  "name": "ft-live-blog-shim",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "nodemon -x micro index.js",
+    "now-start": "micro index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Financial-Times/ft-live-blog-shim.git"
+  },
+  "keywords": [],
+  "author": "Matt Brennan <matt@153.io> (http://blog.153.io/)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Financial-Times/ft-live-blog-shim/issues"
+  },
+  "homepage": "https://github.com/Financial-Times/ft-live-blog-shim#readme",
+  "dependencies": {
+    "boulevard": "^2.3.5",
+    "micro": "^4.1.1",
+    "raw-body": "^2.1.7"
+  },
+  "devDependencies": {
+    "nodemon": "^1.9.2"
+  }
+}
