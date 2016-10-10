@@ -64,6 +64,12 @@ const blogFormMeta = (blog, body) => merge(blog, {
 	}
 });
 
+const renderMessage = data => `<li>
+	<b>${data.authornamestyle === 'full' ? data.authordisplayname : data.author}</b>
+	<time datetime="${new Date(data.emb * 1000).toISOString()}">${new Date(data.emb * 1000).toLocaleString()}</time>
+	${data.textrendered}
+</li>`;
+
 export default route({
 	'/' (req, res) {
 		const {authorName = ''} = cookies(req);
@@ -139,7 +145,9 @@ export default route({
 							<hr>
 							<ul>
 							${blog.catchup.map(event => {
-								if(event.event === 'msg') return `<li><b>${event.data.authordisplayname}</b> ${event.data.textrendered}</li>`;
+								switch(event.event) {
+									case 'msg': return renderMessage(event.data);
+								}
 							}).join('\n')}
 							<li>
 								<form action="/blog/${params.id}/post" method="POST">
@@ -179,5 +187,4 @@ export default route({
 			}
 		}
 	}
-
 });
