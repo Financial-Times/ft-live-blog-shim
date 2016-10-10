@@ -55,45 +55,71 @@ export default route({
 		}
 	},
 
-	'/blog/:id' (req, res, params) {
+	async '/blog/:id' (req, res, params) {
 		const blog = blogs[params.id];
-		if(!blog) return html(res, `<a href="/">↩</a> blog ${params.id} not found`);
+		if(!blog) return html(res, `<a href="/">↩</a> blog ${params.id} not found`, 404);
 
-		const {query = {}} = url.parse(req.url, true);
-
-		switch(query.action) {
-			case 'catchup': {
-				return blog.catchup;
-			}
-
-			case 'getconfig': {
-				return blog.config;
-			}
-
-			case 'getmeta': {
-				return blog.meta;
-			}
-
+		switch(req.method) {
 			default: {
-				return html(res, `
-					<a href="/">↩</a>
-					<article>
-					${blogForm(params.id, blog.meta)}
+				const {query = {}} = url.parse(req.url, true);
 
-					<hr>
-					<ul>
-					${blog.catchup.map(event => {
+				switch(query.action) {
+					case 'catchup': {
+						return blog.catchup;
+					}
 
-					})}
-					<hr>
-					<li>
-						<form action="/blog/${params.id}" method="PUT">
-							<input name="msg" placeholder="Message"><input type="submit" value="">
-						</form>
-					</li>
-					</ul>
-				</article>`);
+					case 'getconfig': {
+						return blog.config;
+					}
+
+					case 'getmeta': {
+						return blog.meta;
+					}
+
+					default: {
+						return html(res, `
+							<a href="/">↩</a>
+							<article>
+							${blogForm(params.id, blog.meta)}
+
+							<hr>
+							<ul>
+							${blog.catchup.map(event => {
+								if(event.event === 'msg') return `<li>${event.data.textrendered}</li>`;
+							}).join('\n')}
+							<li>
+								<form action="/blog/${params.id}/post" method="POST">
+									<input name="msg" placeholder="Message"><input type="submit" value="+">
+								</form>
+							</li>
+							</ul>
+						</article>`);
+					}
+				}
+			}
+		}
+	},
+
+	async '/blog/:id/post' (req, res, params) {
+		const blog = blogs[params.id];
+		if(!blog) return html(res, `<a href="/">↩</a> blog ${params.id} not found`, 404);
+
+		switch(req.method) {
+			case 'POST': {
+				const body = await formBody(req);
+				blog.catchup.push({
+					event: 'msg',
+					data: {
+						mid: blog.catchup.length,
+						textrendered: body.msg,
+						emb: Math.floor(Date.now() / 1000),
+						datemodified: Math.floor(Date.now() / 1000),
+					},
+				});
+
+				return redirect(res, `/blog/${params.id}`);
 			}
 		}
 	}
+
 });
