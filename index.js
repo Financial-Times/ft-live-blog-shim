@@ -140,7 +140,7 @@ export default route({
 						datemodified: Math.floor(Date.now() / 1000),
 						authordisplayname: authorName,
 						author: authorName.split(' ').map(p => p[0].toUpperCase()).join(''),
-						authornamestyle: 'full',
+						authornamestyle: blog.config.authornamestyle,
 					},
 				});
 
