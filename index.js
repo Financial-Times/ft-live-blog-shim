@@ -52,17 +52,24 @@ const blogForm = (
 	<input type="submit" value="${id ? 'Update blog' : 'Create blog'}">
 </form>`;
 
-const blogFormMeta = (blog, body) => merge(blog, {
-	config: {
-		authornamestyle: body.nameStyle || 'full',
-		contentorder: body.contentOrder || 'descending',
-	},
-	meta: {
-		title: body.title,
-		excerpt: body.excerpt,
-		status: body.status || 'pending',
-	}
-});
+const blogFormMeta = (blog, body) => {
+	blog.catchup.push({
+		event: 'postSaved',
+		data: body
+	});
+
+	merge(blog, {
+		config: {
+			authornamestyle: body.nameStyle || 'full',
+			contentorder: body.contentOrder || 'descending',
+		},
+		meta: {
+			title: body.title,
+			excerpt: body.excerpt,
+			status: body.status || 'pending',
+		}
+	});
+}
 
 const renderMessage = id => ({event, data}) => `<li id="${event}-${typeof data.mid === 'undefined' ? data.messageid : data.mid}">
 ${event === 'msg' || event === 'editmsg' ? `
@@ -76,7 +83,9 @@ ${event === 'msg' || event === 'editmsg' ? `
 			<button name="action" value="delete" type="submit">🚫</button>
 		</form>` : data.textrendered}
 	</p>
-` : event === 'delete' ? `deleted message <a href="#msg-${data.messageid}">${data.messageid}</a>` : `what's a "${event}"`}</li>`;
+` : event === 'delete' ? `<i>deleted message <a href="#msg-${data.messageid}">${data.messageid}</a></i>`
+: event === 'postSaved' ? `<i>updated title to "${data.title}" and excerpt to "${data.excerpt}"`
+: `what's a "${event}"`}</li>`;
 
 export default route({
 	'/' (req, res) {
