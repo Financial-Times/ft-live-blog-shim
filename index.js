@@ -62,6 +62,7 @@ const blogFormMeta = (blog, body) => {
 
 	merge(blog, {
 		config: {
+			baseurl: `${process.env.NOW_URL || 'http://localhost:3000'}/blog/${blog.id}`,
 			authornamestyle: body.nameStyle || 'full',
 			contentorder: body.contentOrder || 'descending',
 		},
@@ -126,6 +127,7 @@ export default route({
 			case 'POST': {
 				const id = Math.floor(Math.random() * 0xffffffffff).toString(36);
 				blogs[id] = {
+					id,
 					catchup: [],
 				};
 
@@ -169,6 +171,11 @@ export default route({
 							<article>
 							<h2>${blog.meta.title}</h2>
 							<h3>${blog.meta.excerpt}</h3>
+
+							<a target="_blank" href="https://ft-google-amp-staging-pr-172.herokuapp.com/content/85c7c9eb-3f8f-3a55-9a62-eccd4319d1ac?overrideBlog=${blog.config.baseurl}">⎋ Open blog in AMP (PR-172)</a>
+							│ <a href="/blog/${params.id}?action=catchup" target="_blank">Catchup JSON</a>
+							│ <a href="/blog/${params.id}?action=getconfig" target="_blank">Config JSON</a>
+							│ <a href="/blog/${params.id}?action=getmeta" target="_blank">Meta JSON</a>
 
 							<hr>
 							<h4>Edit blog</h4>
