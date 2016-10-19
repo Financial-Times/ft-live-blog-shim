@@ -215,6 +215,7 @@ export default route({
 				authordisplayname: authorName,
 				author: authorName.split(' ').map(p => p[0].toUpperCase()).join(''),
 				authornamestyle: blog.config.authornamestyle,
+				authorcolor: authorName.charCodeAt(0) % 3 + 1
 			},
 		});
 
