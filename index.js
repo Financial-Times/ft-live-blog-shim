@@ -20,8 +20,8 @@ const html = (res, t, status = 200) => {
 };
 
 const cookies = req => cookie.parse(req.headers.cookie || '');
-const setCookies = (res, cookies) => Object.keys(cookies).forEach(
-	key => res.setHeader('set-cookie', cookie.serialize(key, cookies[key]))
+const setCookies = (res, cookies) => cookies.forEach(
+	([key, value, options = {}]) => res.setHeader('set-cookie', cookie.serialize(key, cookies[key], options))
 );
 
 const val = (value, received) => `value="${value}" ${received === value ? 'selected' : ''}`;
@@ -115,9 +115,9 @@ export default route({
 	'/author' (req, res) {
 		const {query = {}} = url.parse(req.url, true);
 
-		setCookies(res, {
-			authorName: query.name
-		});
+		setCookies(res, [
+			[authorName, query.name, {maxAge: 30 * 7 * 24 * 60 * 60 * 1000}]
+		]);
 
 		return redirect(res, '/');
 	},
